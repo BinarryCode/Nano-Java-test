@@ -1,5 +1,5 @@
 #---------------------------------------------------------------------------------
-# Nano Java for Nintendo DS (devkitARM + libnds/calico). Built from the top
+# Nano Java for Nintendo DS / DSi (devkitARM + libnds/calico). Built from the top
 # level with `make nds`, which first copies build/classlib.jar to
 # build/nds-data/classlib.bin so it is linked into the ROM.
 #---------------------------------------------------------------------------------
@@ -20,6 +20,11 @@ ARM7_ELF   ?= $(CURDIR)/arm7/nanojava7.elf
 export ARM7_ELF
 _ARM7_ELF  := -7 $(ARM7_ELF)
 
+# Extra ndstool flags that make the ROM header DSi-aware (unit code 02/03).
+# Set on the command line or here once the flag is confirmed from `ndstool -h`.
+DSI_FLAGS ?=
+NDSTOOL   ?= ndstool
+
 TARGET   := nanojava
 BUILD    := build
 SOURCES  := source ../../src/vm ../../src/util ../../src/midp ../../src/audio
@@ -32,6 +37,8 @@ ARCH := -march=armv5te -mtune=arm946e-s
 CFLAGS   := -g -Wall -O2 -std=gnu99 -ffunction-sections -fdata-sections \
             -Wno-unused-parameter $(ARCH) $(INCLUDE) -DARM9 -DNJ_NDS $(EXTRA_CFLAGS)
 ASFLAGS  := -g $(ARCH)
+# ds_rules rewrites ds_arm9.specs to calico's ds9.specs. dsi_arm9.specs is the
+# old crtls startup and does not link against calico-based libnds.
 LDFLAGS   = -specs=ds_arm9.specs -g $(ARCH) -Wl,--gc-sections -Wl,-Map,$(notdir $*.map)
 
 LIBS    := -lfat -lnds9 -lm
@@ -58,6 +65,10 @@ export INCLUDE  := $(foreach dir,$(INCLUDES),-iquote $(CURDIR)/$(dir)) \
                    -I$(CURDIR)/$(BUILD)
 export LIBPATHS := $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
+# The sub-make re-reads this file, so pass the DSi flags down explicitly.
+export DSI_FLAGS
+export NDSTOOL
+
 .PHONY: $(BUILD) clean
 
 $(BUILD):
@@ -70,7 +81,18 @@ clean:
 
 else
 
+ifeq ($(strip $(DSI_FLAGS)),)
+$(warning DSI_FLAGS is empty: the ROM will have a plain NDS header and run in DS mode)
+endif
+
+# Explicit recipe overrides the %.nds pattern rule from ds_rules so we can add
+# the DSi header flags.
 $(OUTPUT).nds: $(OUTPUT).elf $(ARM7_ELF)
+	$(NDSTOOL) -c $@ -9 $< $(_ARM7_ELF) \
+	    -b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
+	    $(DSI_FLAGS)
+	@echo built ... $(notdir $@)
+
 $(OUTPUT).elf: $(OFILES)
 
 $(OFILES_SOURCES): $(HFILES)
