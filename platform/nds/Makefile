@@ -9,7 +9,7 @@ ifeq ($(strip $(DEVKITARM)),)
 $(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
 endif
 
-GAME_TITLE     := Nano Java
+GAME_TITLE     := Nano Java DSi
 GAME_SUBTITLE1 := J2ME runtime
 GAME_SUBTITLE2 := CLDC 1.1 / MIDP 2.0
 
@@ -31,6 +31,7 @@ SOURCES  := source ../../src/vm ../../src/util ../../src/midp ../../src/audio
 INCLUDES := source
 DATA     := ../../build/nds-data
 ICON     :=
+BUILD_TWL := 1
 
 ARCH := -march=armv5te -mtune=arm946e-s
 
