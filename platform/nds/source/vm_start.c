@@ -12,7 +12,7 @@
 
 /* Native memory kept outside the Java heap for class metadata, thread
  * stacks and image decoding. */
-#define NATIVE_RESERVE (2u << 20)
+#define NATIVE_RESERVE (1u << 20)
 
 /* Present only in test builds made with `make nds-embed JAR=...`. */
 extern const uint8_t app_bin[] __attribute__((weak));
@@ -47,9 +47,9 @@ void nds_stop_vm(void)
 int nds_run_vm(const char *jar_path, const char *midlet_class, GameSettings *s)
 {
     size_t free_mem = free_memory();
-    if (free_mem < NATIVE_RESERVE + (2u << 20))
+    if (free_mem < NATIVE_RESERVE + (1u << 20))
         pal_fatal("Not enough memory.");
-    VMOptions opt = {free_mem - NATIVE_RESERVE, 4096 * 2, 256 * 2, false, false, false};
+    VMOptions opt = {free_mem - NATIVE_RESERVE, 4096 * 4, 256 * 4, false, false, false};
     vm_init(&opt);
     midp_init();
 
